@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ôn Tập Tư Tưởng Hồ Chí Minh - HCM202 | Hội Thi Khán Giả & Xếp Hạng</title>
+  <meta name="description" content="Trò chơi ôn tập kiến thức môn Tư tưởng Hồ Chí Minh (HCM202) gồm 3 mốc: Văn hóa, Đạo đức và Con người kèm mini-game ghép hình và tính thứ hạng thời gian thực.">
+
+  <!-- Google Fonts: Chuẩn 100% tiếng Việt với Be Vietnam Pro -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,600;1,700;1,800&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="style.css?v=4.0">
+
+  <style>
+    /* Bảo đảm triệt để mọi thành phần luôn hiển thị bằng font chuẩn tiếng Việt */
+    *,
+    *::before,
+    *::after,
+    html,
+    body,
+    button,
+    input,
+    select,
+    textarea,
+    h1,
+    h2,
+    h3,
+    h4,
+    h5,
+    h6,
+    span,
+    p,
+    div {
+      font-family: 'Be Vietnam Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif !important;
+    }
+
+    /* Đảm bảo khoảng không gian phía trên tiêu đề để dấu hỏi/móc không bị che khuất */
+    .brand-text {
+      overflow: visible !important;
+    }
+    .game-title {
+      line-height: 1.6 !important;
+      padding-top: 8px !important;
+      padding-bottom: 4px !important;
+      display: inline-block !important;
+      overflow: visible !important;
+    }
+
+    /* CSS cho màn hình Đăng ký tên & Phòng chờ */
+    .join-form-wrapper {
+      max-width: 480px;
+      margin: 20px auto 0;
+    }
+    .join-input-group {
+      margin-bottom: 16px;
+    }
+    .player-name-input {
+      width: 100%;
+      padding: 16px 20px;
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: #fff;
+      background: rgba(0, 0, 0, 0.6);
+      border: 2px solid var(--border-gold);
+      border-radius: var(--radius-full);
+      outline: none;
+      text-align: center;
+      transition: var(--transition);
+    }
+    .player-name-input:focus {
+      border-color: var(--gold-primary);
+      box-shadow: 0 0 20px rgba(245, 197, 66, 0.5);
+    }
+    .join-error-box {
+      color: #fca5a5;
+      background: rgba(239, 68, 68, 0.2);
+      border: 1px solid var(--wrong-red);
+      padding: 10px 16px;
+      border-radius: var(--radius-sm);
+      font-size: 0.9rem;
+      font-weight: 600;
+      margin-bottom: 16px;
+      display: none;
+    }
+    .waiting-card {
+      padding: 44px 36px;
+      text-align: center;
+    }
+    .waiting-spinner {
+      width: 70px;
+      height: 70px;
+      margin: 20px auto;
+      border: 4px solid rgba(245, 197, 66, 0.2);
+      border-top-color: var(--gold-primary);
+      border-radius: 50%;
+      animation: spin 1s infinite linear;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    .waiting-player-badge {
+      display: inline-block;
+      font-size: 1.1rem;
+      font-weight: 800;
+      color: #2b0b12;
+      background: var(--gold-gradient);
+      padding: 6px 22px;
+      border-radius: var(--radius-full);
+      margin-bottom: 16px;
+      box-shadow: var(--gold-glow);
+    }
+    .admin-link-btn {
+      color: var(--gold-light);
+      text-decoration: none;
+      font-size: 0.85rem;
+      font-weight: 700;
+      padding: 6px 14px;
+      border: 1px solid rgba(245, 197, 66, 0.3);
+      border-radius: var(--radius-full);
+      background: rgba(45, 10, 20, 0.6);
+      transition: var(--transition);
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .admin-link-btn:hover {
+      background: rgba(90, 20, 35, 0.8);
+      border-color: var(--gold-primary);
+    }
+    .match-timer-pill {
+      font-family: 'Consolas', monospace;
+      font-size: 0.95rem;
+      font-weight: 800;
+      color: var(--gold-light);
+      background: rgba(0, 0, 0, 0.6);
+      padding: 4px 12px;
+      border-radius: var(--radius-full);
+      border: 1px solid var(--border-gold);
+    }
+    .victory-rank-showcase {
+      margin: 20px 0 30px;
+      padding: 20px;
+      background: rgba(245, 197, 66, 0.12);
+      border: 2px solid var(--gold-primary);
+      border-radius: var(--radius-md);
+      box-shadow: 0 0 30px rgba(245, 197, 66, 0.3);
+    }
+    .victory-rank-badge {
+      font-size: 2.4rem;
+      font-weight: 900;
+      color: #ffd700;
+      margin-bottom: 6px;
+      text-shadow: 0 0 15px rgba(245, 197, 66, 0.7);
+    }
+    .victory-time-badge {
+      font-family: 'Consolas', monospace;
+      font-size: 1.3rem;
+      font-weight: 800;
+      color: #fff;
+    }
+  </style>
+</head>
+
+<body>
+  <!-- Ambient Background Canvas & Decorative Elements -->
+  <div class="bg-stars"></div>
+  <div class="bg-pattern"></div>
+  <canvas id="fireworks-canvas"></canvas>
+
+  <!-- Top Navigation Bar -->
+  <header class="game-header">
+    <div class="header-left">
+      <div class="emblem-container">
+        <span class="golden-star">★</span>
+      </div>
+      <div class="brand-text">
+        <h1 class="game-title">TƯ TƯỞNG HỒ CHÍ MINH</h1>
+      </div>
+    </div>
+
+    <!-- Live Timer & Milestone Steps Indicator -->
+    <div class="milestone-stepper" id="milestone-stepper">
+      <div class="match-timer-pill" id="player-timer-display">⏱️ 00:00.0</div>
+      <div class="step-node active" id="step-node-1" data-step="1">
+        <span class="step-num">I</span>
+        <span class="step-label">Văn Hóa</span>
+      </div>
+      <div class="step-connector" id="connector-1"></div>
+      <div class="step-node" id="step-node-2" data-step="2">
+        <span class="step-num">II</span>
+        <span class="step-label">Đạo Đức</span>
+      </div>
+      <div class="step-connector" id="connector-2"></div>
+      <div class="step-node" id="step-node-3" data-step="3">
+        <span class="step-num">III</span>
+        <span class="step-label">Con Người</span>
+      </div>
+    </div>
+
+    <div class="header-controls">
+      <a href="/admin" class="admin-link-btn" title="Trang điều hành của Quản trò" target="_blank">
+        <span>👑</span>
+        <span>Quản Trò</span>
+      </a>
+      <button id="btn-sound" class="btn-icon" title="Bật/Tắt âm thanh" aria-label="Bật/Tắt âm thanh">
+        <span class="icon-speaker">🔊</span>
+      </button>
+      <button id="btn-rule" class="btn-icon" title="Luật chơi & Hướng dẫn" aria-label="Luật chơi">
+        <span>📖</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="main-content">
+
+    <!-- 0. SCREEN JOIN: NHẬP TÊN KHÁN GIẢ -->
+    <section id="screen-join" class="screen-view active">
+      <div class="intro-card glass-panel">
+        <div class="intro-badge">HỘI THI TRỰC TUYẾN HCM202</div>
+        <h2 class="intro-heading">HÀNH TRÌNH TRI THỨC</h2>
+        <p class="intro-desc">
+          Chào mừng bạn đến với phòng thi đấu trực tiếp môn <strong>Tư tưởng Hồ Chí Minh</strong>.
+          Hãy nhập tên của bạn để đăng ký vào phòng chờ trước khi trận đấu bắt đầu!
+        </p>
+
+        <div class="join-form-wrapper">
+          <div class="join-error-box" id="join-error-box">
+            ⚠️ Trò chơi đã bắt đầu! Phòng thi đấu đã khóa và không nhận thêm người chơi.
+          </div>
+
+          <form id="form-player-join">
+            <div class="join-input-group">
+              <input type="text" id="input-player-name" class="player-name-input" placeholder="Nhập họ và tên hoặc biệt danh..." required autofocus maxlength="30" autocomplete="name">
+            </div>
+            <button type="submit" id="btn-submit-join" class="btn-primary-golden btn-full">
+              <span>THAM GIA PHÒNG CHỜ</span>
+              <span class="btn-arrow">➔</span>
+            </button>
+          </form>
+        </div>
+
+        <div class="rule-box" style="margin-top: 30px;">
+          <div class="rule-title">⚡ QUY TẮC THI ĐẤU KHÁN GIẢ:</div>
+          <p>• <strong>Phòng chờ:</strong> Sau khi nhập tên, bạn sẽ ở phòng chờ cho đến khi Quản trò nhấn <strong>Bắt đầu trò chơi</strong>.</p>
+          <p>• <strong>Khóa phòng:</strong> Ngay khi trận đấu bắt đầu, phòng sẽ đóng và <strong>không thể tham gia thêm</strong>.</p>
+          <p>• <strong>Xếp hạng:</strong> Thứ hạng chung cuộc được tính theo <strong>tổng thời gian hoàn thành</strong> cả 3 Mốc thi đấu và 3 bức tranh lịch sử!</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 1. SCREEN WAITING: PHÒNG CHỜ ADMIN BẮT ĐẦU -->
+    <section id="screen-waiting" class="screen-view">
+      <div class="waiting-card glass-panel">
+        <div class="intro-badge">PHÒNG CHỜ THI ĐẤU TRỰC TIẾP</div>
+        <div class="waiting-player-badge" id="waiting-player-name">Thí Sinh: ...</div>
+        <h2 class="intro-heading">ĐÃ VÀO PHÒNG CHỜ!</h2>
+        
+        <div class="waiting-spinner"></div>
+        <p class="intro-desc" id="waiting-status-text">
+          Đang chờ Quản trò (Admin) nhấn <strong>"Bắt đầu trò chơi"</strong> trên màn hình chính...<br>
+          <em>Trò chơi sẽ tự động chuyển cảnh ngay khi trận đấu bắt đầu!</em>
+        </p>
+
+        <div class="rule-box" style="text-align: center;">
+          <span style="font-size: 1.1rem; color: #ffd700; font-weight: 700;">
+            👥 Hiện có <span id="waiting-room-count">1</span> thí sinh đang sẵn sàng thi đấu
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <!-- 2. QUIZ SCREEN -->
+    <section id="screen-quiz" class="screen-view">
+      <div class="quiz-container glass-panel">
+        <!-- Milestone Header Info -->
+        <div class="quiz-topbar">
+          <div class="milestone-tag" id="quiz-milestone-tag">MỐC 1: TƯ TƯỞNG VỀ VĂN HÓA</div>
+          <div class="quiz-stats">
+            <span class="stat-item" id="quiz-progress-text">Câu hỏi 1 / 5</span>
+            <span class="stat-badge" id="quiz-streak-badge">🔥 Chuỗi đúng: 0</span>
+          </div>
+        </div>
+
+        <!-- Question Progress Bar -->
+        <div class="progress-bar-wrapper">
+          <div class="progress-bar-fill" id="quiz-progress-bar" style="width: 20%;"></div>
+        </div>
+
+        <!-- Question Card -->
+        <div class="question-box">
+          <div class="question-number-tag" id="question-number-display">CÂU 1</div>
+          <h2 class="question-content" id="question-text">
+            Nội dung câu hỏi sẽ hiển thị ở đây...
+          </h2>
+        </div>
+
+        <!-- Answer Options List -->
+        <div class="options-grid" id="options-container">
+          <!-- Options injected via JavaScript -->
+        </div>
+
+        <div class="quiz-footer-hint">
+          <span>💡 <em>Lưu ý: Chọn sai sẽ cần giải lại từ câu đầu tiên của mốc hiện tại. Hãy suy nghĩ thật kỹ!</em></span>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. PUZZLE SCREEN -->
+    <section id="screen-puzzle" class="screen-view">
+      <div class="puzzle-container glass-panel">
+        <div class="puzzle-header">
+          <div class="puzzle-badge">MẢNH GHÉP LỊCH SỬ</div>
+          <h2 class="puzzle-title" id="puzzle-title">Ghép Tranh Văn Hóa Việt Nam</h2>
+          <p class="puzzle-instruction" id="puzzle-instruction">
+            Nhấp chọn 2 mảnh ghép để <strong>đổi chỗ</strong> cho nhau (hoặc kéo - thả) để hoàn chỉnh bức tranh!
+          </p>
+        </div>
+
+        <div class="puzzle-playground">
+          <!-- Left: Active Puzzle Board -->
+          <div class="puzzle-board-wrapper">
+            <div class="puzzle-board" id="puzzle-board">
+              <!-- 9 puzzle tiles dynamically generated -->
+            </div>
+            <div class="puzzle-status" id="puzzle-status">
+              <span id="puzzle-matched-count">0 / 9 mảnh đúng vị trí</span>
+            </div>
+          </div>
+
+          <!-- Right: Reference Image -->
+          <div class="puzzle-sidebar">
+            <div class="reference-card">
+              <div class="ref-title">🖼️ Bức Tranh Mẫu Cần Hoàn Thành</div>
+              <div class="ref-image-wrapper">
+                <img id="puzzle-reference-img" src="images/van_hoa.jpg" alt="Tranh mẫu">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Puzzle Success Overlay (Shown when solved) -->
+        <div class="puzzle-success-modal" id="puzzle-success-modal">
+          <div class="puzzle-success-content glass-panel">
+            <div class="trophy-icon">🎖️</div>
+            <h3 class="success-heading">TUYỆT VỜI! ĐÃ HOÀN THÀNH BỨC TRANH</h3>
+            <p id="puzzle-success-msg">Bạn đã ghép thành công bức tranh lịch sử và mở khóa mốc tiếp theo!</p>
+            <button id="btn-puzzle-continue" class="btn-primary-golden">
+              <span>TIẾP TỤC HÀNH TRÌNH</span>
+              <span class="btn-arrow">➔</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 4. VICTORY / FINAL SCREEN -->
+    <section id="screen-victory" class="screen-view">
+      <div class="victory-card glass-panel">
+        <div class="victory-ribbon">HOÀN THÀNH XUẤT SẮC KHÓA ÔN TẬP</div>
+        <div class="victory-icon-group">
+          <span class="v-star">★</span>
+          <span class="v-trophy">🏆</span>
+          <span class="v-star">★</span>
+        </div>
+        <h2 class="victory-title">XUẤT SẮC CÁN ĐÍCH!</h2>
+        
+        <!-- Live Official Rank & Time Badge -->
+        <div class="victory-rank-showcase">
+          <div class="victory-rank-badge" id="player-final-rank">HẠNG #1 🥇</div>
+          <div class="victory-time-badge" id="player-final-time">Thời Gian: 00:00.00</div>
+        </div>
+
+        <p class="victory-desc">
+          Bạn đã hoàn thành trọn vẹn cả 3 Mốc kiến thức cốt lõi và 3 mảnh ghép lịch sử của môn <strong>Tư tưởng Hồ Chí Minh (HCM202)</strong>.
+        </p>
+
+        <div class="victory-stats-grid">
+          <div class="v-stat-card">
+            <div class="v-stat-val">15 / 15</div>
+            <div class="v-stat-lbl">Câu hỏi làm chủ</div>
+          </div>
+          <div class="v-stat-card">
+            <div class="v-stat-val">3 / 3</div>
+            <div class="v-stat-lbl">Bức tranh lịch sử</div>
+          </div>
+          <div class="v-stat-card">
+            <div class="v-stat-val" id="final-total-attempts">15</div>
+            <div class="v-stat-lbl">Tổng lượt trả lời</div>
+          </div>
+        </div>
+
+        <div class="gallery-showcase">
+          <div class="gallery-item">
+            <img src="images/van_hoa.jpg" alt="Văn hóa">
+            <span>Mốc 1: Văn Hóa</span>
+          </div>
+          <div class="gallery-item">
+            <img src="images/dao_duc.jpg" alt="Đạo đức">
+            <span>Mốc 2: Đạo Đức</span>
+          </div>
+          <div class="gallery-item">
+            <img src="images/con_nguoi.jpg" alt="Con người">
+            <span>Mốc 3: Con Người</span>
+          </div>
+        </div>
+
+        <div class="victory-actions">
+          <button id="btn-review-all" class="btn-control">
+            <span>📖 Xem lại toàn bộ 15 câu & đáp án</span>
+          </button>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- WRONG ANSWER MODAL (With Countdown & Explanation) -->
+  <div class="modal-overlay" id="modal-wrong">
+    <div class="modal-card glass-panel modal-wrong-panel">
+      <div class="modal-header-wrong">
+        <span class="modal-icon-wrong">⚠️</span>
+        <h3>CHƯA CHÍNH XÁC RỒI!</h3>
+      </div>
+      <div class="modal-body">
+        <p class="wrong-message">
+          Rất tiếc! Bạn cần trả lời đúng liên tục 5 câu trong mốc để vượt qua thử thách.
+        </p>
+        <div class="correct-answer-highlight">
+          <div class="correct-tag">ĐÁP ÁN ĐÚNG:</div>
+          <div class="correct-text" id="modal-correct-text">Đáp án đúng ở đây</div>
+        </div>
+        <div class="explanation-box">
+          <div class="exp-title">📚 Giải thích kiến thức:</div>
+          <p id="modal-explanation-text">Chi tiết giải thích</p>
+        </div>
+
+        <div class="countdown-wrapper">
+          <div class="countdown-text" id="modal-countdown-text">Tự động quay lại câu đầu tiên của mốc sau 3 giây...</div>
+          <div class="countdown-progress-bar">
+            <div class="countdown-fill" id="modal-countdown-fill"></div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button id="btn-retry-now" class="btn-retry">
+          <span>THỬ LẠI NGAY LẬP TỨC ↺</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- RULES / HELP MODAL -->
+  <div class="modal-overlay" id="modal-rule">
+    <div class="modal-card glass-panel">
+      <div class="modal-header">
+        <h3>📖 HƯỚNG DẪN & THỂ LỆ ÔN TẬP</h3>
+        <button id="btn-close-rule" class="btn-close">&times;</button>
+      </div>
+      <div class="modal-body rule-content">
+        <h4>1. Cấu trúc học phần (3 Mốc)</h4>
+        <ul>
+          <li><strong>Mốc 1 (Câu 1 - 5):</strong> Tư tưởng Hồ Chí Minh về Văn hóa.</li>
+          <li><strong>Mốc 2 (Câu 6 - 10):</strong> Tư tưởng Hồ Chí Minh về Đạo đức.</li>
+          <li><strong>Mốc 3 (Câu 11 - 15):</strong> Tư tưởng Hồ Chí Minh về Con người.</li>
+        </ul>
+
+        <h4>2. Cơ chế vượt mốc & Xếp hạng</h4>
+        <ul>
+          <li>Mỗi mốc yêu cầu bạn trả lời chính xác tất cả 5 câu hỏi liên tiếp.</li>
+          <li>Nếu trả lời sai ở bất kỳ câu nào, hệ thống sẽ hiện đáp án & giải thích, sau đó <strong>đưa bạn quay trở lại câu đầu tiên của mốc đó</strong>.</li>
+          <li>Sau 5 câu hỏi, giải <strong>Mini-game Ghép hình</strong> (3x3) bằng cách nhấp chọn 2 mảnh ghép để đổi chỗ hoặc kéo-thả để hoàn thành bức tranh.</li>
+          <li><strong>Thứ hạng:</strong> Hệ thống tính thời gian thi đấu từ khi Quản trò nhấn Bắt đầu cho đến khi bạn hoàn thành toàn bộ 3 mốc!</li>
+        </ul>
+      </div>
+      <div class="modal-footer">
+        <button id="btn-close-rule-ok" class="btn-primary-golden">ĐÃ HIỂU, TIẾP TỤC CHƠI</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- REVIEW 15 QUESTIONS MODAL -->
+  <div class="modal-overlay" id="modal-review">
+    <div class="modal-card glass-panel modal-wide">
+      <div class="modal-header">
+        <h3>📋 TỔNG HỢP KIẾN THỨC 15 CÂU HỎI HCM202</h3>
+        <button id="btn-close-review" class="btn-close">&times;</button>
+      </div>
+      <div class="modal-body review-list" id="review-list-container">
+        <!-- Injected via JavaScript -->
+      </div>
+      <div class="modal-footer">
+        <button id="btn-close-review-ok" class="btn-primary-golden">ĐÓNG</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Socket.io Client & Main Game Script -->
+  <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+  <script>
+    if (typeof io === 'undefined') {
+      document.write('<script src="/socket.io/socket.io.js"><\/script>');
+    }
+  </script>
+  <script src="script.js?v=4.0"></script>
+</body>
+</html>

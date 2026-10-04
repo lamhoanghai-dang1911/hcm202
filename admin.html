@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bảng Điều Khiển Quản Trò (Admin) | Hội Thi Tư Tưởng Hồ Chí Minh HCM202</title>
+  
+  <!-- Google Fonts: Be Vietnam Pro chuẩn 100% tiếng Việt -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,600;1,700;1,800&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="style.css?v=3.2">
+  <link rel="stylesheet" href="admin.css?v=1.0">
+
+  <style>
+    *, *::before, *::after, html, body, button, input, h1, h2, h3, h4, span, p, div {
+      font-family: 'Be Vietnam Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif !important;
+    }
+  </style>
+</head>
+<body class="admin-body">
+  <!-- Atmospheric Canvas & Particles -->
+  <div class="bg-stars"></div>
+  <div class="bg-pattern"></div>
+  <canvas id="fireworks-canvas"></canvas>
+
+  <!-- Admin Top Navigation Bar -->
+  <header class="game-header admin-header">
+    <div class="header-left">
+      <div class="emblem-container">
+        <span class="golden-star">★</span>
+      </div>
+      <div class="brand-text">
+        <h1 class="game-title">BAN QUẢN TRÒ • HỘI THI HCM202</h1>
+      </div>
+    </div>
+
+    <!-- Match Status & Stopwatch -->
+    <div class="admin-match-status">
+      <span class="status-indicator" id="match-status-badge">ĐANG MỞ PHÒNG CHỜ</span>
+      <div class="match-timer" id="match-timer-display">00:00.00</div>
+    </div>
+
+    <div class="header-controls">
+      <button id="btn-admin-sound" class="btn-icon" title="Bật/Tắt âm thanh">
+        <span>🔊</span>
+      </button>
+      <button id="btn-admin-reset" class="btn-control btn-secondary" title="Đặt lại phòng cho trận mới">
+        <span>🔄 Đặt lại phòng</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Main View Area -->
+  <main class="admin-main">
+    
+    <!-- 1. LOGIN PIN OVERLAY (If not logged in) -->
+    <div class="admin-login-overlay active" id="admin-login-overlay">
+      <div class="login-card glass-panel">
+        <div class="lock-icon">🔒</div>
+        <h2>XÁC THỰC QUẢN TRỊ VIÊN</h2>
+        <p>Vui lòng nhập mã PIN quản trò để mở quyền điều khiển trận đấu.</p>
+        
+        <form id="admin-login-form">
+          <input type="password" id="admin-pin-input" class="admin-input-pin" placeholder="Nhập mã PIN (mặc định: 1234)" autofocus autocomplete="off" maxlength="8">
+          <div class="pin-error-msg" id="pin-error-msg"></div>
+          <button type="submit" class="btn-primary-golden btn-full">
+            <span>MỞ BẢNG ĐIỀU KHIỂN</span>
+            <span class="btn-arrow">➔</span>
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- 2. LOBBY VIEW (WAITING ROOM & QR CODE) -->
+    <section id="view-lobby" class="admin-view active">
+      <div class="lobby-grid">
+        <!-- Left: QR Code & Connection Card -->
+        <div class="qr-showcase-card glass-panel">
+          <div class="qr-badge">QUÉT MÃ THAM GIA THI ĐẤU</div>
+          <div class="qr-frame">
+            <img id="admin-qr-img" src="" alt="Mã QR tham gia">
+          </div>
+          <div class="qr-join-info">
+            <div class="qr-join-label">HOẶC TRUY CẬP ĐỊA CHỈ:</div>
+            <a id="admin-join-url" class="qr-join-url" href="#" target="_blank">http://localhost:3000</a>
+          </div>
+          <p class="qr-hint">
+            📱 Khán giả chỉ cần mở Camera điện thoại quét mã QR và nhập tên để vào phòng chờ!
+          </p>
+        </div>
+
+        <!-- Right: Connected Players List & Launch Button -->
+        <div class="players-lobby-card glass-panel">
+          <div class="lobby-card-header">
+            <div class="lobby-title-group">
+              <h3>DANH SÁCH THÍ SINH ĐÃ VÀO PHÒNG</h3>
+              <p>Khán giả đang có mặt tại phòng chờ sẵn sàng thi đấu</p>
+            </div>
+            <div class="player-count-badge">
+              <span id="lobby-player-count">0</span> THÍ SINH
+            </div>
+          </div>
+
+          <div class="lobby-player-list" id="lobby-player-list">
+            <div class="empty-waiting-notice">
+              <span>⏳ Đang đợi khán giả quét mã QR và tham gia...</span>
+            </div>
+          </div>
+
+          <div class="lobby-actions">
+            <div class="lock-notice">
+              ⚡ <strong>LƯU Ý QUAN TRỌNG:</strong> Khi bạn bấm nút Bắt đầu, hệ thống sẽ <strong>tự động khóa phòng</strong> và <strong>không cho phép khán giả vào sau</strong>!
+            </div>
+            <button id="btn-admin-start-game" class="btn-primary-golden btn-huge">
+              <span>🚀 BẮT ĐẦU TRÒ CHƠI & KHÓA PHÒNG</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. LIVE RACING VIEW (DURING MATCH) -->
+    <section id="view-racing" class="admin-view">
+      <div class="racing-container glass-panel">
+        <div class="racing-header">
+          <div>
+            <div class="racing-badge">TRỰC TIẾP TRẬN ĐẤU</div>
+            <h2 class="racing-title">ĐƯỜNG ĐUA TRI THỨC VÀ TỐC ĐỘ</h2>
+          </div>
+          <div class="racing-summary">
+            <span id="racing-finished-count">0 thí sinh đã về đích</span>
+          </div>
+        </div>
+
+        <!-- Live Racing Track List -->
+        <div class="race-tracks-list" id="race-tracks-list">
+          <!-- Populated live via WebSocket -->
+        </div>
+      </div>
+    </section>
+
+    <!-- 4. LEADERBOARD & PODIUM VIEW (AFTER MATCH) -->
+    <section id="view-leaderboard" class="admin-view">
+      <div class="leaderboard-container glass-panel">
+        <div class="leaderboard-header">
+          <div class="trophy-cluster">🏆</div>
+          <h2 class="leaderboard-title">BẢNG VINH DANH THÀNH TÍCH HCM202</h2>
+          <p class="leaderboard-subtitle">Thứ hạng được xác định chính xác theo <strong>thời gian hoàn thành</strong> của từng thí sinh!</p>
+        </div>
+
+        <!-- Top 3 Podium -->
+        <div class="podium-wrapper" id="podium-wrapper">
+          <!-- Injected via JavaScript -->
+        </div>
+
+        <!-- Full Results Table -->
+        <div class="table-responsive">
+          <table class="leaderboard-table">
+            <thead>
+              <tr>
+                <th>Thứ Hạng</th>
+                <th>Thí Sinh</th>
+                <th>Thời Gian Hoàn Thành</th>
+                <th>Lượt Trả Lời</th>
+                <th>Trạng Thái</th>
+              </tr>
+            </thead>
+            <tbody id="leaderboard-table-body">
+              <!-- Injected via JavaScript -->
+            </tbody>
+          </table>
+        </div>
+
+        <div class="leaderboard-footer">
+          <button id="btn-admin-new-round" class="btn-primary-golden">
+            <span>🔄 MỞ TRẬN ĐẤU MỚI</span>
+          </button>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Socket.io Client -->
+  <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+  <script>
+    if (typeof io === 'undefined') {
+      document.write('<script src="/socket.io/socket.io.js"><\/script>');
+    }
+  </script>
+  <script src="script.js"></script>
+  <script src="admin.js?v=1.0"></script>
+</body>
+</html>

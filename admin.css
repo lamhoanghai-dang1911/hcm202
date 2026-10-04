@@ -1,0 +1,638 @@
+/* ===================================================================
+   ADMIN / PROJECTOR DASHBOARD STYLES (HCM202)
+   Broadcast / Big-screen layout, Live Racing, Podium, QR Code
+   =================================================================== */
+
+.admin-body {
+  min-height: 100vh;
+}
+
+.admin-header {
+  padding: 12px 32px;
+}
+
+.admin-match-status {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.status-indicator {
+  padding: 6px 16px;
+  border-radius: var(--radius-full);
+  font-size: 0.85rem;
+  font-weight: 800;
+  letter-spacing: 1px;
+  background: rgba(245, 197, 66, 0.15);
+  border: 1px solid var(--gold-primary);
+  color: var(--gold-light);
+  text-transform: uppercase;
+}
+
+.status-indicator.racing {
+  background: rgba(16, 185, 129, 0.2);
+  border-color: var(--correct-green);
+  color: #6ee7b7;
+  animation: pulseStatus 1.5s infinite alternate;
+}
+
+.status-indicator.finished {
+  background: rgba(245, 197, 66, 0.25);
+  border-color: var(--gold-primary);
+  color: #fde047;
+}
+
+@keyframes pulseStatus {
+  0% { box-shadow: 0 0 10px rgba(16, 185, 129, 0.3); }
+  100% { box-shadow: 0 0 25px rgba(16, 185, 129, 0.7); }
+}
+
+.match-timer {
+  font-family: 'Consolas', 'Courier New', monospace;
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: #fff;
+  background: rgba(0, 0, 0, 0.6);
+  padding: 4px 18px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-gold);
+  letter-spacing: 2px;
+  min-width: 140px;
+  text-align: center;
+}
+
+.admin-main {
+  flex: 1;
+  padding: 24px 32px;
+  max-width: 1400px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+.admin-view {
+  display: none;
+  animation: fadeIn 0.4s ease-out;
+}
+
+.admin-view.active {
+  display: block;
+}
+
+/* 1. LOGIN OVERLAY */
+.admin-login-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(12, 2, 5, 0.95);
+  backdrop-filter: blur(16px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+
+.admin-login-overlay.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.login-card {
+  max-width: 440px;
+  width: 90%;
+  padding: 36px 32px;
+  text-align: center;
+}
+
+.lock-icon {
+  font-size: 3rem;
+  margin-bottom: 12px;
+}
+
+.login-card h2 {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--gold-light);
+  margin-bottom: 8px;
+}
+
+.login-card p {
+  font-size: 0.92rem;
+  color: var(--text-muted);
+  margin-bottom: 22px;
+}
+
+.admin-input-pin {
+  width: 100%;
+  padding: 14px 18px;
+  background: rgba(0, 0, 0, 0.6);
+  border: 1.5px solid var(--border-gold);
+  border-radius: var(--radius-md);
+  color: #fff;
+  font-size: 1.3rem;
+  text-align: center;
+  letter-spacing: 4px;
+  margin-bottom: 12px;
+  outline: none;
+  transition: var(--transition);
+}
+
+.admin-input-pin:focus {
+  border-color: var(--gold-primary);
+  box-shadow: 0 0 15px rgba(245, 197, 66, 0.4);
+}
+
+.pin-error-msg {
+  color: var(--wrong-red);
+  font-size: 0.88rem;
+  font-weight: 600;
+  min-height: 22px;
+  margin-bottom: 12px;
+}
+
+.btn-full {
+  width: 100%;
+}
+
+/* 2. LOBBY VIEW */
+.lobby-grid {
+  display: grid;
+  grid-template-columns: 420px 1fr;
+  gap: 28px;
+  align-items: stretch;
+}
+
+.qr-showcase-card {
+  padding: 32px 28px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.qr-badge {
+  font-size: 0.85rem;
+  font-weight: 800;
+  letter-spacing: 1px;
+  color: var(--gold-light);
+  background: rgba(245, 197, 66, 0.15);
+  border: 1px solid var(--border-gold);
+  padding: 6px 18px;
+  border-radius: var(--radius-full);
+  margin-bottom: 22px;
+}
+
+.qr-frame {
+  width: 250px;
+  height: 250px;
+  background: #fff;
+  border-radius: var(--radius-md);
+  padding: 10px;
+  border: 3px solid var(--gold-primary);
+  box-shadow: 0 0 30px rgba(245, 197, 66, 0.35);
+  margin-bottom: 22px;
+}
+
+.qr-frame img {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.qr-join-info {
+  width: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  border: 1px solid var(--border-gold);
+  border-radius: var(--radius-sm);
+  padding: 12px 16px;
+  margin-bottom: 16px;
+}
+
+.qr-join-label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  letter-spacing: 1px;
+  margin-bottom: 4px;
+}
+
+.qr-join-url {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: var(--gold-light);
+  text-decoration: none;
+  word-break: break-all;
+}
+
+.qr-join-url:hover {
+  text-decoration: underline;
+}
+
+.qr-hint {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+/* Players Lobby Card */
+.players-lobby-card {
+  padding: 32px 36px;
+  display: flex;
+  flex-direction: column;
+}
+
+.lobby-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid rgba(245, 197, 66, 0.2);
+}
+
+.lobby-title-group h3 {
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: #fff;
+}
+
+.lobby-title-group p {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.player-count-badge {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #2b0b12;
+  background: var(--gold-gradient);
+  padding: 6px 18px;
+  border-radius: var(--radius-full);
+  box-shadow: 0 0 15px rgba(245, 197, 66, 0.5);
+}
+
+.lobby-player-list {
+  flex: 1;
+  min-height: 280px;
+  max-height: 380px;
+  overflow-y: auto;
+  display: flex;
+  flex-wrap: wrap;
+  align-content: flex-start;
+  gap: 12px;
+  padding: 16px;
+  background: rgba(15, 3, 7, 0.6);
+  border: 1px solid rgba(245, 197, 66, 0.2);
+  border-radius: var(--radius-md);
+  margin-bottom: 24px;
+}
+
+.empty-waiting-notice {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  font-size: 1.05rem;
+}
+
+.player-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(35, 10, 18, 0.9);
+  border: 1.5px solid var(--border-gold);
+  padding: 8px 16px;
+  border-radius: var(--radius-full);
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.95rem;
+  animation: popIn 0.3s ease-out;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+@keyframes popIn {
+  0% { transform: scale(0.6); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.player-chip-avatar {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--crimson-gradient);
+  color: var(--gold-light);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+.btn-kick-player {
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 1.1rem;
+  cursor: pointer;
+  line-height: 1;
+  padding: 0 2px;
+  transition: var(--transition);
+}
+
+.btn-kick-player:hover {
+  color: var(--wrong-red);
+}
+
+.lobby-actions {
+  margin-top: auto;
+}
+
+.lock-notice {
+  background: rgba(239, 68, 68, 0.15);
+  border-left: 4px solid var(--wrong-red);
+  padding: 10px 16px;
+  border-radius: var(--radius-sm);
+  color: #fee2e2;
+  font-size: 0.88rem;
+  margin-bottom: 16px;
+}
+
+.btn-huge {
+  width: 100%;
+  padding: 20px;
+  font-size: 1.3rem;
+  letter-spacing: 1px;
+}
+
+/* 3. LIVE RACING VIEW */
+.racing-container {
+  padding: 34px;
+}
+
+.racing-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 28px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid rgba(245, 197, 66, 0.2);
+}
+
+.racing-badge {
+  display: inline-block;
+  font-size: 0.85rem;
+  font-weight: 800;
+  color: #6ee7b7;
+  background: rgba(16, 185, 129, 0.15);
+  border: 1px solid var(--correct-green);
+  padding: 4px 16px;
+  border-radius: var(--radius-full);
+  margin-bottom: 6px;
+}
+
+.racing-title {
+  font-size: 1.8rem;
+  font-weight: 900;
+  color: #fff;
+}
+
+.racing-summary {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--gold-light);
+  background: rgba(245, 197, 66, 0.12);
+  padding: 8px 20px;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--border-gold);
+}
+
+.race-tracks-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-height: 600px;
+  overflow-y: auto;
+  padding-right: 6px;
+}
+
+.race-lane {
+  background: rgba(20, 5, 10, 0.7);
+  border: 1px solid rgba(245, 197, 66, 0.25);
+  border-radius: var(--radius-md);
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  transition: var(--transition);
+}
+
+.race-lane.finished {
+  border-color: var(--correct-green);
+  background: rgba(16, 185, 129, 0.1);
+  box-shadow: 0 0 15px rgba(16, 185, 129, 0.25);
+}
+
+.lane-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.lane-player-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.lane-rank-badge {
+  font-size: 1.1rem;
+  font-weight: 800;
+  min-width: 38px;
+}
+
+.lane-player-name {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #fff;
+}
+
+.lane-status-badge {
+  font-size: 0.85rem;
+  font-weight: 700;
+  padding: 4px 12px;
+  border-radius: var(--radius-full);
+  background: rgba(245, 197, 66, 0.15);
+  color: var(--gold-light);
+  border: 1px solid var(--border-gold);
+}
+
+.lane-status-badge.finish-badge {
+  background: var(--correct-green);
+  color: #064e3b;
+  border-color: var(--correct-green);
+  font-weight: 800;
+}
+
+.lane-track-bar {
+  width: 100%;
+  height: 12px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+  position: relative;
+}
+
+.lane-progress-fill {
+  height: 100%;
+  background: var(--gold-gradient);
+  border-radius: var(--radius-full);
+  transition: width 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 0 12px rgba(245, 197, 66, 0.6);
+}
+
+.lane-progress-fill.done {
+  background: linear-gradient(135deg, #34d399 0%, #10b981 100%);
+  box-shadow: 0 0 15px rgba(16, 185, 129, 0.8);
+}
+
+/* 4. LEADERBOARD & PODIUM */
+.leaderboard-container {
+  padding: 40px 36px;
+  text-align: center;
+}
+
+.trophy-cluster {
+  font-size: 4rem;
+  margin-bottom: 10px;
+  filter: drop-shadow(0 0 20px rgba(245, 197, 66, 0.6));
+}
+
+.leaderboard-title {
+  font-size: 2.2rem;
+  font-weight: 900;
+  color: #fff;
+  margin-bottom: 8px;
+}
+
+.leaderboard-subtitle {
+  font-size: 1.05rem;
+  color: var(--text-muted);
+  margin-bottom: 36px;
+}
+
+/* Olympic Podium */
+.podium-wrapper {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 20px;
+  margin-bottom: 44px;
+}
+
+.podium-place {
+  flex: 1;
+  max-width: 260px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.podium-box {
+  width: 100%;
+  border-radius: var(--radius-md) var(--radius-md) 0 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 20px 14px;
+  border: 2px solid;
+}
+
+.podium-place-1 .podium-box {
+  height: 220px;
+  background: linear-gradient(180deg, rgba(245, 197, 66, 0.3) 0%, rgba(20, 5, 10, 0.8) 100%);
+  border-color: #ffd700;
+  box-shadow: 0 0 35px rgba(255, 215, 0, 0.4);
+}
+
+.podium-place-2 .podium-box {
+  height: 180px;
+  background: linear-gradient(180deg, rgba(203, 213, 225, 0.25) 0%, rgba(20, 5, 10, 0.8) 100%);
+  border-color: #cbd5e1;
+  box-shadow: 0 0 25px rgba(203, 213, 225, 0.3);
+}
+
+.podium-place-3 .podium-box {
+  height: 150px;
+  background: linear-gradient(180deg, rgba(217, 119, 6, 0.25) 0%, rgba(20, 5, 10, 0.8) 100%);
+  border-color: #d97706;
+  box-shadow: 0 0 25px rgba(217, 119, 6, 0.3);
+}
+
+.podium-rank-icon {
+  font-size: 2.5rem;
+  margin-bottom: 6px;
+}
+
+.podium-player-name {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: #fff;
+  margin-bottom: 4px;
+}
+
+.podium-player-time {
+  font-family: 'Consolas', monospace;
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: var(--gold-light);
+}
+
+/* Results Table */
+.table-responsive {
+  width: 100%;
+  max-width: 900px;
+  margin: 0 auto 36px;
+  background: rgba(15, 3, 7, 0.7);
+  border: 1px solid var(--border-gold);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.leaderboard-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.leaderboard-table th {
+  background: rgba(45, 10, 20, 0.8);
+  padding: 14px 18px;
+  font-size: 0.88rem;
+  font-weight: 800;
+  letter-spacing: 1px;
+  color: var(--gold-light);
+  border-bottom: 1px solid var(--border-gold);
+}
+
+.leaderboard-table td {
+  padding: 14px 18px;
+  border-bottom: 1px solid rgba(245, 197, 66, 0.12);
+  color: #fff;
+  font-size: 0.95rem;
+}
+
+.leaderboard-table tr:hover td {
+  background: rgba(245, 197, 66, 0.08);
+}
+
+.leaderboard-footer {
+  display: flex;
+  justify-content: center;
+}

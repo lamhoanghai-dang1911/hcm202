@@ -1,0 +1,25 @@
+{
+  "name": "game-hcm202",
+  "version": "2.0.0",
+  "description": "Game Ôn Tập Tư Tưởng Hồ Chí Minh (HCM202) - Multiplayer Room & Live Ranking",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "keywords": [
+    "hcm202",
+    "tu-tuong-ho-chi-minh",
+    "quiz",
+    "puzzle",
+    "multiplayer",
+    "socket.io"
+  ],
+  "dependencies": {
+    "express": "^4.21.2",
+    "qrcode": "^1.5.4",
+    "socket.io": "^4.8.1"
+  },
+  "author": "",
+  "license": "MIT"
+}

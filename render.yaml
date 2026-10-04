@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: game-hcm202
+    env: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: PORT
+        value: 10000
+      - key: ADMIN_PIN
+        value: 1234
