@@ -40,6 +40,8 @@ class AdminApp {
       matchStatusBadge: document.getElementById('match-status-badge'),
       matchTimerDisplay: document.getElementById('match-timer-display'),
       btnAdminSound: document.getElementById('btn-admin-sound'),
+      btnAdminFinish: document.getElementById('btn-admin-finish'),
+      btnAdminFinishRacing: document.getElementById('btn-admin-finish-racing'),
       btnAdminReset: document.getElementById('btn-admin-reset'),
 
       // Login
@@ -89,17 +91,40 @@ class AdminApp {
     return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}.${String(hundredths).padStart(2, '0')}`;
   }
 
-  startStopwatch(serverStartTime) {
+  // 10-Minute Countdown Timer
+  startCountdown(serverStartTime, durationMs = 10 * 60 * 1000) {
     this.startTime = serverStartTime;
+    this.durationMs = durationMs;
     if (this.timerInterval) clearInterval(this.timerInterval);
 
-    this.timerInterval = setInterval(() => {
+    const updateTimer = () => {
       const elapsed = Date.now() - this.startTime;
-      this.dom.matchTimerDisplay.textContent = this.formatTime(elapsed);
-    }, 40);
+      const remaining = Math.max(0, this.durationMs - elapsed);
+
+      const mins = Math.floor(remaining / 60000);
+      const secs = Math.floor((remaining % 60000) / 1000);
+      const hundredths = Math.floor((remaining % 1000) / 10);
+
+      this.dom.matchTimerDisplay.textContent = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}.${String(hundredths).padStart(2, '0')}`;
+
+      // Visual warning when <= 60 seconds remain
+      if (remaining <= 60000 && remaining > 0) {
+        this.dom.matchTimerDisplay.classList.add('urgent');
+      } else {
+        this.dom.matchTimerDisplay.classList.remove('urgent');
+      }
+
+      if (remaining <= 0) {
+        this.stopCountdown();
+        this.dom.matchTimerDisplay.textContent = '00:00.00';
+      }
+    };
+
+    updateTimer();
+    this.timerInterval = setInterval(updateTimer, 50);
   }
 
-  stopStopwatch() {
+  stopCountdown() {
     if (this.timerInterval) {
       clearInterval(this.timerInterval);
       this.timerInterval = null;
@@ -126,10 +151,25 @@ class AdminApp {
     // Start Game Button (Lock & Launch)
     this.dom.btnAdminStartGame.addEventListener('click', () => {
       this.sound.playClick();
-      if (confirm('Bắt đầu trận đấu ngay bây giờ? Phòng sẽ khóa và không cho phép thí sinh vào muộn!')) {
+      if (confirm('Bắt đầu trận đấu ngay bây giờ? Phòng sẽ khóa và không cho phép thí sinh vào muộn! (Thời lượng tối đa 10 phút)')) {
         this.socket.emit('admin_start_game', { pin: this.adminPin });
       }
     });
+
+    // Finish Match Early / Lock Rankings buttons
+    const handleFinishMatch = () => {
+      this.sound.playClick();
+      if (confirm('Bạn có chắc chắn muốn KẾT THÚC TRẬN ĐẤU VÀ CHỐT THỨ HẠNG ngay bây giờ không?\n- Trận đấu sẽ lập tức dừng lại đối với tất cả thí sinh.\n- Hệ thống sẽ chốt thứ hạng chính thức.')) {
+        this.socket.emit('admin_finish_game', { pin: this.adminPin });
+      }
+    };
+
+    if (this.dom.btnAdminFinish) {
+      this.dom.btnAdminFinish.addEventListener('click', handleFinishMatch);
+    }
+    if (this.dom.btnAdminFinishRacing) {
+      this.dom.btnAdminFinishRacing.addEventListener('click', handleFinishMatch);
+    }
 
     // Reset Room Buttons
     const handleReset = () => {
@@ -188,16 +228,19 @@ class AdminApp {
       this.renderWaitingPlayers(data.players || []);
     });
 
-    // 5. Game started
+    // 5. Game started (10-minute session)
     this.socket.on('game_started', (data) => {
       this.gameState = 'IN_PROGRESS';
-      this.dom.matchStatusBadge.textContent = 'TRẬN ĐẤU ĐANG DIỄN RA';
+      this.dom.matchStatusBadge.textContent = 'TRẬN ĐẤU ĐANG DIỄN RA (10 PHÚT)';
       this.dom.matchStatusBadge.className = 'status-indicator racing';
+
+      if (this.dom.btnAdminFinish) this.dom.btnAdminFinish.style.display = 'inline-flex';
+      if (this.dom.btnAdminFinishRacing) this.dom.btnAdminFinishRacing.style.display = 'inline-flex';
 
       this.sound.playMilestoneWin();
       this.fireworks.triggerCelebration();
 
-      this.startStopwatch(data.startTime);
+      this.startCountdown(data.startTime, data.durationMs || (10 * 60 * 1000));
       this.showView(this.dom.viewRacing);
     });
 
@@ -206,36 +249,61 @@ class AdminApp {
       this.renderRaceTracks(data.players || []);
     });
 
-    // 7. Leaderboard update
+    // 7. Leaderboard update (during match)
     this.socket.on('leaderboard_update', (data) => {
       this.renderRaceTracks(data.players || []);
       this.renderLeaderboard(data.leaderboard || []);
 
-      const finishedCount = (data.leaderboard || []).length;
+      const finishedCount = (data.leaderboard || []).filter(p => p.status === 'FINISHED').length;
       this.dom.racingFinishedCount.textContent = `${finishedCount} thí sinh đã về đích`;
 
-      // If at least 1 finished, sound celebratory fanfare
-      this.sound.playMilestoneWin();
+      // Visual fanfare when someone completes
+      this.sound.playCorrect();
       this.fireworks.burst();
+    });
 
-      // Show leaderboard view once anyone finishes or host chooses
-      if (finishedCount > 0 && !this.dom.viewLeaderboard.classList.contains('active')) {
-        // Automatically switch to leaderboard after brief delay or keep race view
-        setTimeout(() => {
-          this.showView(this.dom.viewLeaderboard);
-          this.dom.matchStatusBadge.textContent = 'ĐÃ CÓ THÍ SINH VỀ ĐÍCH';
-          this.dom.matchStatusBadge.className = 'status-indicator finished';
-        }, 1200);
+    // 7b. Official Match Finished (10 mins up or Admin finish)
+    this.socket.on('game_finished', (data) => {
+      this.gameState = 'FINISHED';
+      this.stopCountdown();
+      this.dom.matchTimerDisplay.classList.remove('urgent');
+
+      if (this.dom.btnAdminFinish) this.dom.btnAdminFinish.style.display = 'none';
+      if (this.dom.btnAdminFinishRacing) this.dom.btnAdminFinishRacing.style.display = 'none';
+
+      this.dom.matchStatusBadge.textContent = 'TRẬN ĐẤU ĐÃ KẾT THÚC • ĐÃ CHỐT HẠNG';
+      this.dom.matchStatusBadge.className = 'status-indicator finished';
+
+      this.sound.playVictory();
+      this.fireworks.triggerCelebration();
+      setTimeout(() => this.fireworks.triggerCelebration(), 800);
+
+      this.renderLeaderboard(data.leaderboard || []);
+      this.showView(this.dom.viewLeaderboard);
+
+      let reasonNotice = 'Trận đấu đã chính thức kết thúc và bảng thứ hạng đã được chốt!';
+      if (data.reason === 'TIME_EXPIRED') {
+        reasonNotice = '⏳ ĐÃ HẾT 10 PHÚT! Trận đấu đã tự động kết thúc và chốt thứ hạng chính thức cho toàn bộ thí sinh!';
+      } else if (data.reason === 'ADMIN_TERMINATED') {
+        reasonNotice = '🏁 Quản trò đã bấm kết thúc trận đấu và chốt thứ hạng chính thức!';
+      } else if (data.reason === 'ALL_FINISHED') {
+        reasonNotice = '🎉 Toàn bộ thí sinh đã hoàn thành xuất sắc trước 10 phút!';
       }
+      setTimeout(() => alert(reasonNotice), 400);
     });
 
     // 8. Game reset
     this.socket.on('game_reset', () => {
       this.gameState = 'WAITING';
-      this.stopStopwatch();
-      this.dom.matchTimerDisplay.textContent = '00:00.00';
+      this.stopCountdown();
+      this.dom.matchTimerDisplay.textContent = '10:00';
+      this.dom.matchTimerDisplay.classList.remove('urgent');
       this.dom.matchStatusBadge.textContent = 'ĐANG MỞ PHÒNG CHỜ';
       this.dom.matchStatusBadge.className = 'status-indicator';
+
+      if (this.dom.btnAdminFinish) this.dom.btnAdminFinish.style.display = 'none';
+      if (this.dom.btnAdminFinishRacing) this.dom.btnAdminFinishRacing.style.display = 'none';
+
       this.dom.lobbyPlayerCount.textContent = '0';
       this.dom.lobbyPlayerList.innerHTML = `
         <div class="empty-waiting-notice">
@@ -253,18 +321,25 @@ class AdminApp {
       this.showView(this.dom.viewLobby);
       this.dom.matchStatusBadge.textContent = 'ĐANG MỞ PHÒNG CHỜ';
       this.dom.matchStatusBadge.className = 'status-indicator';
+      if (this.dom.btnAdminFinish) this.dom.btnAdminFinish.style.display = 'none';
+      if (this.dom.btnAdminFinishRacing) this.dom.btnAdminFinishRacing.style.display = 'none';
       this.renderWaitingPlayers(state.players || []);
     } else if (this.gameState === 'IN_PROGRESS') {
       this.showView(this.dom.viewRacing);
-      this.dom.matchStatusBadge.textContent = 'TRẬN ĐẤU ĐANG DIỄN RA';
+      this.dom.matchStatusBadge.textContent = 'TRẬN ĐẤU ĐANG DIỄN RA (10 PHÚT)';
       this.dom.matchStatusBadge.className = 'status-indicator racing';
-      if (state.startTime) this.startStopwatch(state.startTime);
+      if (this.dom.btnAdminFinish) this.dom.btnAdminFinish.style.display = 'inline-flex';
+      if (this.dom.btnAdminFinishRacing) this.dom.btnAdminFinishRacing.style.display = 'inline-flex';
+      if (state.startTime) this.startCountdown(state.startTime, state.durationMs || (10 * 60 * 1000));
       this.renderRaceTracks(state.players || []);
-    }
-
-    if (state.leaderboard && state.leaderboard.length > 0) {
-      this.renderLeaderboard(state.leaderboard);
+    } else if (this.gameState === 'FINISHED') {
+      this.stopCountdown();
       this.showView(this.dom.viewLeaderboard);
+      this.dom.matchStatusBadge.textContent = 'TRẬN ĐẤU ĐÃ KẾT THÚC • ĐÃ CHỐT HẠNG';
+      this.dom.matchStatusBadge.className = 'status-indicator finished';
+      if (this.dom.btnAdminFinish) this.dom.btnAdminFinish.style.display = 'none';
+      if (this.dom.btnAdminFinishRacing) this.dom.btnAdminFinishRacing.style.display = 'none';
+      if (state.leaderboard) this.renderLeaderboard(state.leaderboard);
     }
   }
 
@@ -412,13 +487,18 @@ class AdminApp {
     this.dom.leaderboardTableBody.innerHTML = '';
     leaderboard.forEach(item => {
       const row = document.createElement('tr');
-      const medal = item.rank === 1 ? '🥇 HẠNG 1' : (item.rank === 2 ? '🥈 HẠNG 2' : (item.rank === 3 ? '🥉 HẠNG 3' : `HẠNG ${item.rank}`));
+      const medal = item.rank === 1 ? '🥇 HẠNG 1' : (item.rank === 2 ? '🥈 HẠNG 2' : (item.rank === 3 ? '🥉 HẠNG 3' : `HẠNG #${item.rank}`));
+      const isFinished = item.status === 'FINISHED';
+      const statusBadge = isFinished
+        ? `<span class="lane-status-badge finish-badge">✓ Đã Về Đích</span>`
+        : `<span class="lane-status-badge" style="background: rgba(239, 68, 68, 0.2); color: #fca5a5; border: 1px solid #ef4444;">⏱️ Chốt Hạng (Hết giờ)</span>`;
+
       row.innerHTML = `
         <td><strong>${medal}</strong></td>
         <td><strong>${item.name}</strong></td>
         <td><span style="font-family: monospace; font-size: 1.05rem; color: #ffd700;">${item.finishTimeFormatted}</span></td>
-        <td>${item.attempts || 15} lượt</td>
-        <td><span class="lane-status-badge finish-badge">✓ Đã Hoàn Thành</span></td>
+        <td>${item.attempts || 0} lượt</td>
+        <td>${statusBadge}</td>
       `;
       this.dom.leaderboardTableBody.appendChild(row);
     });

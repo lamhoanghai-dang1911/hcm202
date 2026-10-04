@@ -39,12 +39,18 @@
     <!-- Match Status & Stopwatch -->
     <div class="admin-match-status">
       <span class="status-indicator" id="match-status-badge">ĐANG MỞ PHÒNG CHỜ</span>
-      <div class="match-timer" id="match-timer-display">00:00.00</div>
+      <div class="match-timer-box">
+        <span class="timer-countdown-tag">CÒN LẠI (TỐI ĐA 10P)</span>
+        <div class="match-timer" id="match-timer-display">10:00</div>
+      </div>
     </div>
 
     <div class="header-controls">
       <button id="btn-admin-sound" class="btn-icon" title="Bật/Tắt âm thanh">
         <span>🔊</span>
+      </button>
+      <button id="btn-admin-finish" class="btn-control btn-danger" style="display: none;" title="Kết thúc trận đấu và chốt thứ hạng ngay">
+        <span>🏁 Kết thúc & Chốt hạng</span>
       </button>
       <button id="btn-admin-reset" class="btn-control btn-secondary" title="Đặt lại phòng cho trận mới">
         <span>🔄 Đặt lại phòng</span>
@@ -126,12 +132,19 @@
       <div class="racing-container glass-panel">
         <div class="racing-header">
           <div>
-            <div class="racing-badge">TRỰC TIẾP TRẬN ĐẤU</div>
+            <div class="racing-badge">TRỰC TIẾP TRẬN ĐẤU • TỐI ĐA 10 PHÚT</div>
             <h2 class="racing-title">ĐƯỜNG ĐUA TRI THỨC VÀ TỐC ĐỘ</h2>
           </div>
           <div class="racing-summary">
             <span id="racing-finished-count">0 thí sinh đã về đích</span>
+            <button id="btn-admin-finish-racing" class="btn-control btn-danger btn-finish-racing" title="Kết thúc trận đấu và chốt thứ hạng ngay">
+              <span>🏁 Kết Thúc Sớm & Chốt Hạng</span>
+            </button>
           </div>
+        </div>
+
+        <div class="racing-timer-notice" id="admin-racing-timer-notice">
+          <span>⏱️ <strong>Quy định:</strong> Phiên thi đấu diễn ra tối đa <strong>10 phút</strong>. Hết 10 phút hệ thống sẽ tự động chốt bảng xếp hạng. Bạn cũng có thể bấm <strong>"Kết Thúc Sớm & Chốt Hạng"</strong> bất kỳ lúc nào!</span>
         </div>
 
         <!-- Live Racing Track List -->

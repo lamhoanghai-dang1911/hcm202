@@ -96,8 +96,10 @@ app.get('/api/server-info', async (req, res) => {
 // --- GAME STATE ---
 let gameState = 'WAITING'; // 'WAITING' | 'IN_PROGRESS' | 'FINISHED'
 let startTime = null;
+const MATCH_DURATION_MS = (parseInt(process.env.MATCH_DURATION_MINUTES) || 10) * 60 * 1000; // 10 minutes limit
+let matchTimeoutId = null;
 const players = new Map(); // socket.id -> PlayerObject
-const leaderboard = [];    // Array of finished players sorted by finishTimeMs
+const leaderboard = [];    // Official finalized ranking leaderboard
 
 function formatTime(ms) {
   if (!ms || ms < 0) return '00:00.00';
@@ -140,6 +142,99 @@ function getLiveRaceData() {
   return list;
 }
 
+// Finalize match & lock rankings (After 10 mins or manual Admin finish)
+function finalizeMatch(reason = 'TIME_EXPIRED') {
+  if (gameState !== 'IN_PROGRESS') return;
+  gameState = 'FINISHED';
+
+  if (matchTimeoutId) {
+    clearTimeout(matchTimeoutId);
+    matchTimeoutId = null;
+  }
+
+  const durationMs = startTime ? (Date.now() - startTime) : MATCH_DURATION_MS;
+
+  // Separate finished and unfinished players
+  const finishedList = [];
+  const unfinishedList = [];
+
+  players.forEach(p => {
+    if (p.status === 'FINISHED') {
+      finishedList.push(p);
+    } else {
+      unfinishedList.push(p);
+    }
+  });
+
+  // Finished players sorted by completion time
+  finishedList.sort((a, b) => (a.finishTimeMs || 0) - (b.finishTimeMs || 0));
+
+  // Unfinished players sorted by furthest progress
+  unfinishedList.sort((a, b) => {
+    if ((b.milestone || 1) !== (a.milestone || 1)) return (b.milestone || 1) - (a.milestone || 1);
+    const aStepVal = (a.step === 'puzzle') ? 10 : (a.question || 1);
+    const bStepVal = (b.step === 'puzzle') ? 10 : (b.question || 1);
+    if (bStepVal !== aStepVal) return bStepVal - aStepVal;
+    if ((a.attempts || 0) !== (b.attempts || 0)) return (a.attempts || 0) - (b.attempts || 0);
+    return (a.joinedAt || 0) - (b.joinedAt || 0);
+  });
+
+  // Re-index official leaderboard
+  leaderboard.length = 0;
+  let currentRank = 1;
+
+  finishedList.forEach(p => {
+    p.rank = currentRank;
+    leaderboard.push({
+      id: p.id,
+      name: p.name,
+      status: 'FINISHED',
+      finishTimeMs: p.finishTimeMs,
+      finishTimeFormatted: p.finishTimeFormatted,
+      attempts: p.attempts || 0,
+      rank: currentRank,
+      summary: `Hoàn thành (${p.finishTimeFormatted})`
+    });
+    currentRank++;
+  });
+
+  unfinishedList.forEach(p => {
+    p.status = 'TIME_OUT';
+    p.rank = currentRank;
+    const stepLabel = (p.step === 'puzzle') ? 'Ghép tranh' : `Câu ${p.question || 1}/5`;
+    const summary = `Mốc ${p.milestone || 1} • ${stepLabel}`;
+    p.finishTimeFormatted = summary;
+    leaderboard.push({
+      id: p.id,
+      name: p.name,
+      status: 'TIME_OUT',
+      finishTimeMs: durationMs,
+      finishTimeFormatted: summary,
+      attempts: p.attempts || 0,
+      rank: currentRank,
+      summary: summary
+    });
+    currentRank++;
+  });
+
+  console.log(`[MATCH FINISHED] Reason: ${reason}. Total participants: ${players.size}, Finished: ${finishedList.length}, Time-out: ${unfinishedList.length}`);
+
+  // Broadcast to all connected clients
+  io.emit('game_finished', {
+    reason,
+    durationMs,
+    durationFormatted: formatTime(durationMs),
+    leaderboard,
+    players: getLiveRaceData()
+  });
+
+  // Also emit leaderboard_update for backwards compatibility
+  io.emit('leaderboard_update', {
+    leaderboard,
+    players: getLiveRaceData()
+  });
+}
+
 // --- SOCKET.IO EVENTS ---
 io.on('connection', async (socket) => {
   // Determine host for client
@@ -160,6 +255,8 @@ io.on('connection', async (socket) => {
   // 1. Initial info
   socket.emit('server_status', {
     gameState,
+    startTime,
+    durationMs: MATCH_DURATION_MS,
     lanIp: LAN_IP,
     joinUrl: effectiveJoinUrl,
     qrCode: clientQr
@@ -268,6 +365,13 @@ io.on('connection', async (socket) => {
     });
 
     console.log(`[FINISH] Rank #${assignedRank}: "${player.name}" in ${formatted}!`);
+
+    // Check if ALL players have finished
+    const allFinished = Array.from(players.values()).every(p => p.status === 'FINISHED');
+    if (players.size > 0 && allFinished) {
+      console.log('[ALL FINISHED] All players have completed! Auto-finalizing match.');
+      finalizeMatch('ALL_FINISHED');
+    }
   });
 
   // 5. Admin Authentication
@@ -276,6 +380,7 @@ io.on('connection', async (socket) => {
       socket.emit('admin_auth_success', {
         gameState,
         startTime,
+        durationMs: MATCH_DURATION_MS,
         players: getLiveRaceData(),
         leaderboard,
         joinUrl: effectiveJoinUrl,
@@ -286,7 +391,7 @@ io.on('connection', async (socket) => {
     }
   });
 
-  // 6. Admin Starts Game
+  // 6. Admin Starts Game (10-minute maximum limit)
   socket.on('admin_start_game', ({ pin }) => {
     if (pin !== ADMIN_PIN) {
       return socket.emit('admin_auth_error', { message: 'Mã PIN không hợp lệ!' });
@@ -296,16 +401,26 @@ io.on('connection', async (socket) => {
       gameState = 'IN_PROGRESS';
       startTime = Date.now();
 
+      // Clear any existing timeout
+      if (matchTimeoutId) clearTimeout(matchTimeoutId);
+
+      // Start 10-minute auto-finish countdown timer (600,000 ms)
+      matchTimeoutId = setTimeout(() => {
+        console.log('[TIMEOUT] 10 minutes reached! Auto-finalizing match rankings...');
+        finalizeMatch('TIME_EXPIRED');
+      }, MATCH_DURATION_MS);
+
       // Mark all connected waiting players as PLAYING
       players.forEach(p => {
         p.status = 'PLAYING';
       });
 
-      console.log(`[START] Game started by Admin with ${players.size} players at ${new Date(startTime).toLocaleTimeString()}!`);
+      console.log(`[START] Game started by Admin with ${players.size} players at ${new Date(startTime).toLocaleTimeString()} (Duration: 10 mins)!`);
 
-      // Broadcast start signal to all players simultaneously
+      // Broadcast start signal with duration to all players simultaneously
       io.emit('game_started', {
         startTime,
+        durationMs: MATCH_DURATION_MS,
         totalPlayers: players.size
       });
 
@@ -331,9 +446,26 @@ io.on('connection', async (socket) => {
     }
   });
 
+  // 7b. Admin Finishes Game Early & Locks Rankings
+  socket.on('admin_finish_game', ({ pin }) => {
+    if (pin !== ADMIN_PIN) {
+      return socket.emit('admin_auth_error', { message: 'Mã PIN không hợp lệ!' });
+    }
+
+    if (gameState === 'IN_PROGRESS') {
+      console.log('[FINISH] Game manually ended and rankings locked by Admin.');
+      finalizeMatch('ADMIN_TERMINATED');
+    }
+  });
+
   // 8. Admin Resets Game for a New Match
   socket.on('admin_reset_game', ({ pin }) => {
     if (pin !== ADMIN_PIN) return;
+
+    if (matchTimeoutId) {
+      clearTimeout(matchTimeoutId);
+      matchTimeoutId = null;
+    }
 
     gameState = 'WAITING';
     startTime = null;

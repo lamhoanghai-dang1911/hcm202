@@ -139,6 +139,17 @@
       padding: 4px 12px;
       border-radius: var(--radius-full);
       border: 1px solid var(--border-gold);
+      transition: all 0.3s ease;
+    }
+    .match-timer-pill.urgent {
+      color: #ff4d4f !important;
+      border-color: #ff4d4f !important;
+      background: rgba(185, 28, 28, 0.35) !important;
+      animation: urgentPlayerTimer 0.9s infinite alternate;
+    }
+    @keyframes urgentPlayerTimer {
+      0% { transform: scale(1); box-shadow: 0 0 6px rgba(239, 68, 68, 0.4); }
+      100% { transform: scale(1.05); box-shadow: 0 0 16px rgba(239, 68, 68, 0.85); }
     }
     .victory-rank-showcase {
       margin: 20px 0 30px;
@@ -245,6 +256,7 @@
 
         <div class="rule-box" style="margin-top: 30px;">
           <div class="rule-title">⚡ QUY TẮC THI ĐẤU KHÁN GIẢ:</div>
+          <p>• <strong>Thời lượng phiên:</strong> Mỗi trận đấu kéo dài tối đa <strong>10 phút</strong>. Hết 10 phút, hệ thống sẽ tự động chốt bảng xếp hạng chính thức!</p>
           <p>• <strong>Phòng chờ:</strong> Sau khi nhập tên, bạn sẽ ở phòng chờ cho đến khi Quản trò nhấn <strong>Bắt đầu trò chơi</strong>.</p>
           <p>• <strong>Khóa phòng:</strong> Ngay khi trận đấu bắt đầu, phòng sẽ đóng và <strong>không thể tham gia thêm</strong>.</p>
           <p>• <strong>Xếp hạng:</strong> Thứ hạng chung cuộc được tính theo <strong>tổng thời gian hoàn thành</strong> cả 3 Mốc thi đấu và 3 bức tranh lịch sử!</p>
@@ -262,13 +274,16 @@
         <div class="waiting-spinner"></div>
         <p class="intro-desc" id="waiting-status-text">
           Đang chờ Quản trò (Admin) nhấn <strong>"Bắt đầu trò chơi"</strong> trên màn hình chính...<br>
-          <em>Trò chơi sẽ tự động chuyển cảnh ngay khi trận đấu bắt đầu!</em>
+          <em>Trò chơi sẽ tự động bắt đầu đồng loạt cho tất cả mọi người!</em>
         </p>
 
         <div class="rule-box" style="text-align: center;">
           <span style="font-size: 1.1rem; color: #ffd700; font-weight: 700;">
             👥 Hiện có <span id="waiting-room-count">1</span> thí sinh đang sẵn sàng thi đấu
           </span>
+          <div style="margin-top: 8px; font-size: 0.92rem; color: #fef08a;">
+            ⏱️ <em>Lưu ý: Bạn có tối đa <strong>10 phút</strong> để vượt qua cả 3 mốc và ghép tranh.</em>
+          </div>
         </div>
       </div>
     </section>

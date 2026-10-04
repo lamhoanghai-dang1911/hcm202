@@ -613,7 +613,7 @@ class GameApp {
     });
   }
 
-  // --- STOPWATCH ---
+  // --- 10-MINUTE COUNTDOWN TIMER ---
   formatTime(ms) {
     if (!ms || ms < 0) return '00:00.0';
     const totalSeconds = Math.floor(ms / 1000);
@@ -623,21 +623,57 @@ class GameApp {
     return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}.${tenths}`;
   }
 
-  startPlayerStopwatch(startTime) {
+  startPlayerCountdown(startTime, durationMs = 10 * 60 * 1000) {
     this.playerStartTime = startTime || Date.now();
+    this.matchDurationMs = durationMs;
     if (this.playerTimerInterval) clearInterval(this.playerTimerInterval);
 
-    this.playerTimerInterval = setInterval(() => {
+    const updateTimer = () => {
       const elapsed = Date.now() - this.playerStartTime;
-      this.dom.playerTimerDisplay.textContent = `⏱️ ${this.formatTime(elapsed)}`;
-    }, 100);
+      const remaining = Math.max(0, this.matchDurationMs - elapsed);
+
+      const mins = Math.floor(remaining / 60000);
+      const secs = Math.floor((remaining % 60000) / 1000);
+      const tenths = Math.floor((remaining % 1000) / 100);
+
+      this.dom.playerTimerDisplay.textContent = `⏱️ Còn lại: ${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}.${tenths}`;
+
+      // Visual warning pulse when <= 60 seconds remain
+      if (remaining <= 60000 && remaining > 0) {
+        this.dom.playerTimerDisplay.classList.add('urgent');
+      } else {
+        this.dom.playerTimerDisplay.classList.remove('urgent');
+      }
+
+      if (remaining <= 0) {
+        this.stopPlayerCountdown();
+        this.dom.playerTimerDisplay.textContent = '⏱️ HẾT GIỜ 10:00';
+        // In standalone mode, trigger victory summary automatically
+        if (!this.socket || !this.socket.connected) {
+          alert('⏳ Đã hết thời gian 10 phút của phiên thi đấu! Hệ thống chốt kết quả bài thi.');
+          this.showVictoryScreen();
+        }
+      }
+    };
+
+    updateTimer();
+    this.playerTimerInterval = setInterval(updateTimer, 100);
   }
 
-  stopPlayerStopwatch() {
+  stopPlayerCountdown() {
     if (this.playerTimerInterval) {
       clearInterval(this.playerTimerInterval);
       this.playerTimerInterval = null;
     }
+  }
+
+  // Alias for backward compatibility
+  startPlayerStopwatch(startTime, durationMs) {
+    this.startPlayerCountdown(startTime, durationMs);
+  }
+
+  stopPlayerStopwatch() {
+    this.stopPlayerCountdown();
   }
 
   // --- EVENT BINDINGS ---
@@ -750,13 +786,13 @@ class GameApp {
       }
     });
 
-    // Game Started by Admin!
+    // Game Started by Admin! (10-minute session)
     this.socket.on('game_started', (data) => {
       this.sound.playMilestoneWin();
       this.fireworks.triggerCelebration();
 
-      // Start player stopwatch
-      this.startPlayerStopwatch(data.startTime);
+      // Start player 10-minute countdown
+      this.startPlayerCountdown(data.startTime, data.durationMs || (10 * 60 * 1000));
 
       // Begin Mốc 1 (Câu 1)
       this.startMilestone(0);
@@ -769,14 +805,54 @@ class GameApp {
       this.dom.playerFinalTime.textContent = `Thời Gian Hoàn Thành: ${data.finishTimeFormatted}`;
     });
 
+    // Game Finished by Server (10 mins expired or Admin manually ended)
+    this.socket.on('game_finished', (data) => {
+      this.stopPlayerCountdown();
+      this.dom.playerTimerDisplay.classList.remove('urgent');
+
+      this.sound.playVictory();
+      this.fireworks.triggerCelebration();
+
+      // Close open modals if any
+      if (this.dom.modalWrong) this.dom.modalWrong.classList.remove('active');
+      if (this.dom.puzzleSuccessModal) this.dom.puzzleSuccessModal.classList.remove('show');
+
+      // Find player's position in official leaderboard
+      const myResult = (data.leaderboard || []).find(p => p.id === (this.socket ? this.socket.id : null) || p.name === this.playerName);
+
+      if (myResult) {
+        const medal = myResult.rank === 1 ? '🥇 QUÁN QUÂN' : (myResult.rank === 2 ? '🥈 Á QUÂN' : (myResult.rank === 3 ? '🥉 QUÝ QUÂN' : ''));
+        this.dom.playerFinalRank.textContent = `HẠNG #${myResult.rank} ${medal}`;
+        this.dom.playerFinalTime.textContent = `Kết Quả: ${myResult.finishTimeFormatted}`;
+      } else {
+        this.dom.playerFinalRank.textContent = 'HOÀN THÀNH PHIÊN THI';
+      }
+
+      this.dom.finalTotalAttempts.textContent = this.totalAttempts;
+
+      // Switch to Victory Screen
+      this.showScreen(this.dom.screenVictory);
+
+      let msg = 'Trận đấu đã chính thức kết thúc và bảng thứ hạng đã được chốt!';
+      if (data.reason === 'TIME_EXPIRED') {
+        msg = '⏳ ĐÃ HẾT 10 PHÚT! Trận đấu đã tự động kết thúc và chốt thứ hạng chính thức cho toàn bộ thí sinh!';
+      } else if (data.reason === 'ADMIN_TERMINATED') {
+        msg = '🏁 Quản trò đã bấm kết thúc trận đấu và chốt thứ hạng chính thức!';
+      } else if (data.reason === 'ALL_FINISHED') {
+        msg = '🎉 Tất cả thí sinh đã hoàn thành xuất sắc trước 10 phút!';
+      }
+      setTimeout(() => alert(msg), 400);
+    });
+
     // Game reset by Admin
     this.socket.on('game_reset', (data) => {
-      this.stopPlayerStopwatch();
+      this.stopPlayerCountdown();
       this.currentMilestoneIdx = 0;
       this.currentQuestionIdx = 0;
       this.currentStreak = 0;
       this.totalAttempts = 0;
-      this.dom.playerTimerDisplay.textContent = '⏱️ 00:00.0';
+      this.dom.playerTimerDisplay.classList.remove('urgent');
+      this.dom.playerTimerDisplay.textContent = '⏱️ 10:00';
       this.updateStepper();
       this.dom.joinErrorBox.style.display = 'none';
       this.showScreen(this.dom.screenJoin);
